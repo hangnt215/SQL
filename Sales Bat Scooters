@@ -1,0 +1,93 @@
+--Object: Extracting the Sales Information
+--step 1: Examine the database
+select *
+From sales
+
+--step 2: Use an inner join, list some information
+Select p.model, customer_id, sales_transaction_date, sales_amount, channel, dealership_id
+Into product_sales1
+From sales s
+Inner join product_sales1 p on s.product_id = p.product_id
+
+--step 3: Select the first five rows of Sales database
+select top 5 *
+From product_sales
+
+--step 4: Select all the information from the product_sales table, available for Bat
+select *
+From product_sales
+Where model = 'Bat'
+Order by sales_transaction_date asc
+
+--step 5: Count the number of records available
+Select count (*) as number_records
+From product_sales
+Where  model = 'Bat'
+
+--step 6: Determine the last sale date for the Bat
+Select max (sales_transaction_date) as last_date
+From product_sales
+Where model = 'Bat'
+
+--step 7: Collect the daily sales volumne for the Bat and place it in a new table bat_sale01
+
+Select *
+Into bat_sales01
+From product_sales
+Where model = 'Bat'
+Order by sales_transaction_date
+
+Select *
+From bat_sales01
+
+--step 8: Remove the time information to allow tracking of sales by date
+Update bat_sales01
+Set sales_transaction_date = cast(sales_transaction_date as date)
+
+--step 9: Show the first five records of bat_sales01
+select top 5 *
+From bat_sales01
+Order by sales_transaction_date
+
+--step 10: Create a new table (bat_sales_daily) containing the sales transaction dates and a daily count of total sales
+select sales_transaction_date, sum (sales_amount) as sales_total1
+Into bat_sales_daily01
+From bat_sales02
+Group by sales_transaction_date
+Order by sales_transaction_date
+
+--step 11: Examine the first 22 records
+Select top 22 *
+From bat_sales_daily01
+
+--Quantifying the Sales Drop 
+
+--step 12: Compute the daily cumulative sum of sales
+select *, sum (sales_total) over (order by sales_transaction_date) as total_sum_sales
+Into bat_sales_growth_01
+From bat_sales_daily01
+
+Select *
+From bat_sales_growth_01
+
+-- step 13: Compute a 7-day lag of the sum column, and then insert all the columns of bat_sales_daily
+
+Select *, lag(total_sum_sales, 7) over (order by sales_transaction_date) as lag_7
+Into bat_sales_daily_delay_01
+From bat_sales_growth_01
+
+Select *
+From bat_sales_daily_delay_01
+
+-- step 14: Show the first 15 rows of bat_sales_daily_delay_01
+Select top 15 *
+From bat_sales_daily_delay_01
+
+-- step 15: Compute the sales growth as a percentage, comparing the current sales volume to that of 1 week prior.
+
+Select * ,(total_sum_sales - lag_7)/lag_7 as volume
+Into bat_sales_delay_vol_03
+From bat_sales_daily_delay_01
+
+Select top 22*
+From bat_sales_delay_vol_02
